@@ -15,6 +15,10 @@ type Place struct {
 	Location PlaceLocation `json:"location"`
 	// Categories contains the Foursquare category classifications for the place.
 	Categories []PlaceCategory `json:"categories"`
+	// DateClosed is the date when the place was marked as permanently closed
+	// in Foursquare's database. Empty string if the place is still open.
+	// Format: YYYY-MM-DD (Pro tier field, returned by default).
+	DateClosed string `json:"date_closed,omitempty"`
 }
 
 // PlaceLocation contains the address components of a place.
