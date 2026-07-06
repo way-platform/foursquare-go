@@ -190,6 +190,55 @@ func TestSearch_ResponseParsing(t *testing.T) {
 	}
 }
 
+func TestSearch_DateClosedParsing(t *testing.T) {
+	body := `{"results":[{"fsq_place_id":"closed1","name":"Closed Gas Station","latitude":52.0,"longitude":13.0,"location":{"formatted_address":"Berlin, Germany"},"categories":[],"date_closed":"2024-11-15"}]}`
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(body))
+	}))
+	defer srv.Close()
+
+	client := foursquare.NewClient(foursquare.WithAPIKey("t"), foursquare.WithBaseURL(srv.URL))
+	result, err := client.Search(context.Background(), &foursquare.SearchRequest{
+		Latitude:  52.0,
+		Longitude: 13.0,
+	})
+	if err != nil {
+		t.Fatalf("Search error: %v", err)
+	}
+
+	if len(result.Results) != 1 {
+		t.Fatalf("len(Results) = %d, want 1", len(result.Results))
+	}
+	if result.Results[0].DateClosed != "2024-11-15" {
+		t.Errorf("DateClosed = %q, want %q", result.Results[0].DateClosed, "2024-11-15")
+	}
+}
+
+func TestSearch_DateClosedEmpty(t *testing.T) {
+	body := `{"results":[{"fsq_place_id":"open1","name":"Open Station","latitude":52.0,"longitude":13.0,"location":{},"categories":[]}]}`
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(body))
+	}))
+	defer srv.Close()
+
+	client := foursquare.NewClient(foursquare.WithAPIKey("t"), foursquare.WithBaseURL(srv.URL))
+	result, err := client.Search(context.Background(), &foursquare.SearchRequest{
+		Latitude:  52.0,
+		Longitude: 13.0,
+	})
+	if err != nil {
+		t.Fatalf("Search error: %v", err)
+	}
+
+	if result.Results[0].DateClosed != "" {
+		t.Errorf("DateClosed = %q, want empty for open place", result.Results[0].DateClosed)
+	}
+}
+
 func TestSearch_HTTPError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"message":"Unauthorized"}`, http.StatusUnauthorized)

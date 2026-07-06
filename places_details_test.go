@@ -89,3 +89,22 @@ func TestGetPlace_NotFound(t *testing.T) {
 		t.Errorf("IsNotFound(err) = false, want true; err = %v", err)
 	}
 }
+
+func TestGetPlace_DateClosed(t *testing.T) {
+	body := `{"fsq_place_id":"abc","name":"Closed Place","latitude":52.0,"longitude":13.0,"location":{"formatted_address":"Berlin"},"categories":[],"date_closed":"2025-03-01"}`
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(body))
+	}))
+	defer srv.Close()
+
+	client := foursquare.NewClient(foursquare.WithAPIKey("t"), foursquare.WithBaseURL(srv.URL))
+	result, err := client.GetPlace(context.Background(), &foursquare.GetPlaceRequest{FSQPlaceID: "abc"})
+	if err != nil {
+		t.Fatalf("GetPlace error: %v", err)
+	}
+	if result.DateClosed != "2025-03-01" {
+		t.Errorf("DateClosed = %q, want %q", result.DateClosed, "2025-03-01")
+	}
+}
