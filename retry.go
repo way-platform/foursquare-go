@@ -3,10 +3,11 @@ package foursquare
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"errors"
 	"io"
 	"math"
-	"math/rand/v2"
+	"math/big"
 	"net/http"
 	"strconv"
 	"time"
@@ -91,7 +92,8 @@ func (tr *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 // computed backoff when it is larger.
 func retryDelay(attempt int, retryAfter time.Duration) time.Duration {
 	exp := math.Pow(2, float64(attempt))
-	backoff := time.Duration(float64(retryBaseDelay)*exp) + time.Duration(rand.Float64()*float64(retryBaseDelay))
+	n, _ := rand.Int(rand.Reader, big.NewInt(int64(retryBaseDelay)))
+	backoff := time.Duration(float64(retryBaseDelay)*exp) + time.Duration(n.Int64())
 	if backoff > retryMaxDelay {
 		backoff = retryMaxDelay
 	}
